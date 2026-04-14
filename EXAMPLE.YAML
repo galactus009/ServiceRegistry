@@ -1,0 +1,183 @@
+ustp_version: "1.0"
+
+metadata:
+  name: "enterprise-topology"
+  environment: "production"
+  region: "multi"
+  owner: "platform-sre"
+  last_updated: "2026-04-14"
+
+# =========================
+# NODE DEFINITIONS
+# =========================
+nodes:
+
+  - id: "svc:user-api"
+    name: "User API Service"
+    type: "service"
+    subtype: "microservice"
+    language: "go"
+    runtime: "kubernetes"
+    team: "user-platform"
+    tier: "tier-1"
+    criticality: "high"
+    sla:
+      availability: "99.9"
+      latency_ms_p99: 200
+    endpoints:
+      - protocol: "http"
+        port: 8080
+    observability:
+      metrics: ["request_rate", "error_rate", "latency"]
+      logs: true
+      traces: true
+
+  - id: "db:user-db"
+    name: "User Database"
+    type: "database"
+    subtype: "postgres"
+    engine: "aurora"
+    team: "data-platform"
+    tier: "tier-1"
+    criticality: "high"
+    observability:
+      metrics: ["connections", "cpu", "replication_lag"]
+
+  - id: "stream:user-events"
+    name: "User Events Stream"
+    type: "stream"
+    subtype: "kafka"
+    cluster: "kafka-prod"
+    topic: "user.events"
+    team: "event-platform"
+    tier: "tier-2"
+
+  - id: "job:user-etl"
+    name: "User ETL Pipeline"
+    type: "job"
+    subtype: "airflow"
+    schedule: "0 * * * *"
+    team: "data-engineering"
+
+  - id: "ext:stripe"
+    name: "Stripe API"
+    type: "external"
+    subtype: "saas"
+    provider: "stripe"
+    criticality: "medium"
+
+# =========================
+# EDGE DEFINITIONS
+# =========================
+edges:
+
+  - id: "edge-1"
+    from: "svc:user-api"
+    to: "db:user-db"
+    type: "data_read_write"
+    protocol: "sql"
+    sync: true
+    criticality: "high"
+    sla_impact: true
+
+  - id: "edge-2"
+    from: "svc:user-api"
+    to: "stream:user-events"
+    type: "async_event"
+    protocol: "kafka"
+    topic: "user.events"
+    sync: false
+
+  - id: "edge-3"
+    from: "job:user-etl"
+    to: "stream:user-events"
+    type: "data_consume"
+    protocol: "kafka"
+
+  - id: "edge-4"
+    from: "svc:user-api"
+    to: "ext:stripe"
+    type: "sync_call"
+    protocol: "https"
+    timeout_ms: 2000
+    retries: 3
+
+# =========================
+# POLICIES
+# =========================
+policies:
+
+  - id: "p1"
+    name: "critical-service-must-have-observability"
+    applies_to:
+      type: "service"
+      criticality: "high"
+    rules:
+      require_traces: true
+      require_metrics: true
+
+  - id: "p2"
+    name: "external-call-retries"
+    applies_to:
+      type: "external"
+    rules:
+      min_retries: 2
+      timeout_ms_max: 3000
+
+# =========================
+# OBSERVABILITY INTEGRATION
+# =========================
+observability:
+
+  providers:
+    metrics: "prometheus"
+    logs: "loki"
+    traces: "tempo"
+
+  correlation:
+    trace_id: "trace_id"
+    span_id: "span_id"
+    log_trace_binding: true
+
+# =========================
+# AI CONTEXT (CRITICAL ADDITION)
+# =========================
+ai_context:
+
+  embeddings:
+    enabled: true
+    fields: ["name", "type", "team", "criticality"]
+
+  rca:
+    entry_nodes: ["svc:user-api"]
+    max_depth: 5
+    include_async_edges: true
+
+  impact_analysis:
+    blast_radius_limit: 50
+    prioritize:
+      - criticality
+      - tier
+
+# =========================
+# GOVERNANCE
+# =========================
+governance:
+
+  validation:
+    schema: "ustp-schema-v1"
+    enforce_unique_ids: true
+    enforce_edge_direction: true
+
+  cicd:
+    required_checks:
+      - "schema_validation"
+      - "orphan_node_detection"
+      - "cycle_detection"
+
+  drift_detection:
+    enabled: true
+    sources:
+      - "kubernetes"
+      - "terraform"
+      - "service_registry"
