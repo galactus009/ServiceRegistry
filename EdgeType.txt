@@ -1,1 +1,5 @@
 
+sync_call, async_event, data_read, data_write,
+stream_produce, stream_consume,
+batch_trigger, external_api,
+auth_dependency, config_dependency
