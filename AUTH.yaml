@@ -1,0 +1,7 @@
+policies:
+  - id: enforce-auth
+    rules:
+      - type: mandatory_dependency
+        node_type: service
+        must_have:
+          - auth_dependency
