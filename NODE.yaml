@@ -1,0 +1,51 @@
+nodes:
+  - id: <string>
+    name: <string>
+    type: <enum>
+    subtype: <string>
+
+    ownership:
+      team: <string>
+      email: <string>
+
+    classification:
+      tier: <tier1|tier2|tier3>
+      business_criticality: <high|medium|low>
+      data_sensitivity: <public|internal|confidential|regulated>
+
+    deployment:
+      environment: <prod|stage|dev>
+      cloud: <aws|azure|gcp|onprem|saas>
+      region: <string>
+
+    runtime:
+      language: <string>
+      framework: <string>
+
+    endpoints:
+      - protocol: http
+        url: <string>
+
+    streaming:
+      topics:
+        - name: <string>
+          role: <producer|consumer>
+
+    batch:
+      schedule: <cron>
+      platform: airflow
+
+    sla:
+      availability: 99.9
+
+    resiliency:
+      timeout_ms: 2000
+      retries: 3
+
+    observability:
+      metrics:
+        provider: prometheus
+      logs:
+        provider: elasticsearch
+
+    tags: []
