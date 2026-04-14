@@ -1,0 +1,14 @@
+version: 1
+
+metadata:
+  name: <string>
+  description: <string>
+  owner: <team>
+  last_updated: <ISO-8601>
+  environment: <prod|stage|dev>
+
+nodes: []
+edges: []
+policies: []
+observability: {}
+extensions: {}
