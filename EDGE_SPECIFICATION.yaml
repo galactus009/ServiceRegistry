@@ -1,0 +1,26 @@
+edges:
+  - id: <string>
+    source: <node_id>
+    target: <node_id>
+
+    type: <enum>
+
+    semantics:
+      protocol: <http|grpc|kafka|jdbc>
+      pattern: <sync|async|batch|stream>
+
+    criticality:
+      level: <high|medium|low>
+
+    performance:
+      latency_ms_p99: <int>
+
+    reliability:
+      timeout_ms: <int>
+      retry_policy:
+        retries: <int>
+
+    data_contract:
+      format: <json|avro|protobuf>
+
+    tags: []
